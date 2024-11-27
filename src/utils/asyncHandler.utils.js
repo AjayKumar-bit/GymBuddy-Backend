@@ -3,7 +3,7 @@ const asyncHandler = (fn) => async (req, res, next) => {
     await fn(req, res, next)
   } catch (error) {
     res.status(error.statusCode || 500).json({
-      massage: error.message,
+      message: error.message,
       statusCode: error.statusCode,
       success: false,
     })
