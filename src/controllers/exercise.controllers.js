@@ -1,0 +1,160 @@
+import { asyncHandler } from '../utils/asyncHandler.utils.js'
+import { ApiError } from '../utils/apiError.utils.js'
+import { ApiStatusCode, ApiErrorMessages, ApiSuccessMessages } from '../constants/api.constants.js'
+import { ApiResponse } from '../utils/apiResponse.utils.js'
+import { days } from '../model/days.model.js'
+import { exercise } from '../model/exercise.model.js'
+
+const addExercise = asyncHandler(async (req, res) => {
+  const { dayId, exerciseDetails, videoRecommendations } = req.body
+  const { _id: userId } = req.user
+
+  if (!dayId || !exerciseDetails) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.BadRequest,
+      message: ApiErrorMessages.MissingExerciseData,
+    })
+  }
+
+  const dayExists = await days.findOne({ _id: dayId, userId })
+  if (!dayExists) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.NoDayFound,
+    })
+  }
+
+  const existingExercise = await exercise.findOne({
+    userId,
+    dayId,
+    'exerciseDetails.id': exerciseDetails.id,
+  })
+
+  if (existingExercise) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.DuplicateEntries,
+      message: ApiErrorMessages.ExerciseAlreadyExist,
+    })
+  }
+
+  const exerciseData = new exercise({
+    userId,
+    dayId,
+    exerciseDetails,
+    videoRecommendations: videoRecommendations || [],
+  })
+
+  await exerciseData.save()
+
+  res.status(ApiStatusCode.Created).json(
+    new ApiResponse({
+      statusCode: ApiStatusCode.Created,
+      data: exerciseData,
+      message: ApiSuccessMessages.ExerciseAdded,
+    }),
+  )
+})
+
+const getExercisesByDay = asyncHandler(async (req, res) => {
+  const { dayId } = req.params
+  const { _id: userId } = req.user
+
+  if (!dayId) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.BadRequest,
+      message: ApiErrorMessages.NoDayFound,
+    })
+  }
+
+  const exercises = await exercise.find({ dayId, userId })
+
+  if (exercises.length === 0) {
+    return res.status(ApiStatusCode.NotFound).json(
+      new ApiResponse({
+        statusCode: ApiStatusCode.NotFound,
+        message: ApiSuccessMessages.NoExerciseFound,
+        data: [],
+      }),
+    )
+  }
+
+  res.status(ApiStatusCode.Success).json(
+    new ApiResponse({
+      statusCode: ApiStatusCode.Success,
+      data: exercises,
+    }),
+  )
+})
+
+const deleteExercise = asyncHandler(async (req, res) => {
+  const { dayId, exerciseId } = req.query
+  const { _id: userId } = req.user
+
+  const dayExists = await days.findOne({ _id: dayId, userId })
+  if (!dayExists) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.NoDayFound,
+    })
+  }
+
+  const deletedExercise = await exercise.findOneAndDelete({
+    userId,
+    dayId,
+    _id: exerciseId,
+  })
+
+  if (!deletedExercise) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.NoExerciseFound,
+    })
+  }
+
+  res.status(ApiStatusCode.Success).json({
+    statusCode: ApiStatusCode.Success,
+    message: ApiSuccessMessages.ExerciseDeleted,
+  })
+})
+
+const updateExercise = asyncHandler(async (req, res) => {
+  const { exerciseDetails, videoRecommendations, dayId, exerciseId } = req.body
+  const { _id: userId } = req.user
+
+  const dayExists = await days.findOne({ _id: dayId, userId })
+  if (!dayExists) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.NoDayFound,
+    })
+  }
+
+  const exerciseData = await exercise.findOne({ userId, dayId, _id: exerciseId })
+  if (!exerciseData) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.NoExerciseFound,
+    })
+  }
+
+  exerciseData.exerciseDetails = exerciseDetails
+    ? { ...exerciseData.exerciseDetails, ...exerciseDetails }
+    : exerciseData.exerciseDetails
+
+  exerciseData.videoRecommendations = videoRecommendations
+    ? {
+        ...exerciseData.videoRecommendations,
+        ...videoRecommendations,
+      }
+    : exerciseData.videoRecommendations
+
+  await exerciseData.save()
+
+  res.status(ApiStatusCode.Success).json({
+    statusCode: ApiStatusCode.Success,
+    data: exerciseData,
+    message: ApiSuccessMessages.ExerciseUpdated,
+  })
+})
+
+export { addExercise, getExercisesByDay, deleteExercise, updateExercise }
