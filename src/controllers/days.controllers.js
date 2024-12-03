@@ -32,14 +32,17 @@ const addDay = asyncHandler(async (req, res) => {
   const day = new days({
     userId: _id,
     dayName,
-  }).select('-userId')
+  })
 
   day.save()
+
+  const dayData = day.toObject()
+  delete dayData.userId
 
   res.status(ApiStatusCode.Created).json(
     new ApiResponse({
       statusCode: ApiStatusCode.Created,
-      data: day,
+      data: dayData,
       message: ApiSuccessMessages.DayAdded,
     }),
   )
