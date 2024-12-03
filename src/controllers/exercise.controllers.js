@@ -59,6 +59,8 @@ const getExercisesByDay = asyncHandler(async (req, res) => {
   const { dayId } = req.params
   const { _id: userId } = req.user
 
+  const { offset = 0, limit = 10 } = req.query
+
   if (!dayId) {
     throw new ApiError({
       statusCode: ApiStatusCode.BadRequest,
@@ -66,7 +68,10 @@ const getExercisesByDay = asyncHandler(async (req, res) => {
     })
   }
 
-  const exercises = await exercise.find({ dayId, userId })
+  const offsetNum = parseInt(offset, 10)
+  const limitNum = parseInt(limit, 10)
+
+  const exercises = await exercise.find({ dayId, userId }).skip(offsetNum).limit(limitNum)
 
   if (exercises.length === 0) {
     return res.status(ApiStatusCode.NotFound).json(
