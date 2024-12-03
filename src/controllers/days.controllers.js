@@ -51,7 +51,7 @@ const getDays = asyncHandler(async (req, res) => {
   const data = await days
     .find({ userId: _id })
     .sort({ createdAt: 1 })
-    .select('-userId -createdAt -updatedAt')
+    .select('-userId -createdAt -updatedAt',"__v")
 
   if (data.length === 0) {
     throw new ApiError({
