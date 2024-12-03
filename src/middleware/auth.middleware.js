@@ -5,7 +5,7 @@ import { ApiError } from '../utils/apiError.utils.js'
 import { ApiErrorMessages, ApiStatusCode } from '../constants/api.constants.js'
 
 const verifyToken = asyncHandler(async (req, _, next) => {
-  const accessToken = req.header('Authorization').replace('Bearer ', '')
+  const accessToken = req.header('Authorization')?.replace('Bearer ', '')
   let id
 
   // if token not present
