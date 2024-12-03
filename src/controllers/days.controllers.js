@@ -32,7 +32,7 @@ const addDay = asyncHandler(async (req, res) => {
   const day = new days({
     userId: _id,
     dayName,
-  })
+  }).select('-userId')
 
   day.save()
 
