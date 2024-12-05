@@ -33,8 +33,9 @@ export const ApiErrorMessages = {
   FailedToUpdateDay: 'Failed to update day, try again later',
   NoDayFound: 'No day found in planner with this name and id',
   MissingExerciseData: 'Missing exercise and day to be added',
-  ExerciseAlreadyExist: 'This exercise already exists in planner',
+  ExerciseAlreadyExist: 'This exercise already exists in planner for',
   NoExerciseFound: 'No exercise found with this name',
+  InvalidDaySelect: 'One of selected day is invalid',
 }
 
 export const ApiSuccessMessages = {
@@ -47,7 +48,7 @@ export const ApiSuccessMessages = {
   DayAdded: 'Day added successfully',
   DayDeleted: 'Day deleted successfully',
   DayUpdated: 'Day updated successfully',
-  ExerciseAdded: 'Exercise added successfully',
+  ExerciseAdded: 'Exercise(s) added successfully',
   NoExerciseFound: 'No exercise data available for this day',
   ExerciseDeleted: 'Exercise deleted successfully',
   ExerciseUpdated: 'Exercise updated successfully',

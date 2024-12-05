@@ -6,50 +6,54 @@ import { days } from '../model/days.model.js'
 import { exercise } from '../model/exercise.model.js'
 
 const addExercise = asyncHandler(async (req, res) => {
-  const { dayId, exerciseDetails, videoRecommendations } = req.body
+  const { dayIds, exerciseDetails, videoRecommendations } = req.body
   const { _id: userId } = req.user
 
-  if (!dayId || !exerciseDetails) {
+  if (!dayIds || dayIds.length === 0 || !exerciseDetails) {
     throw new ApiError({
       statusCode: ApiStatusCode.BadRequest,
       message: ApiErrorMessages.MissingExerciseData,
     })
   }
 
-  const dayExists = await days.findOne({ _id: dayId, userId })
-  if (!dayExists) {
-    throw new ApiError({
-      statusCode: ApiStatusCode.NotFound,
-      message: ApiErrorMessages.NoDayFound,
+  for (const dayId of dayIds) {
+    const dayExists = await days.findOne({ _id: dayId, userId })
+    if (!dayExists) {
+      throw new ApiError({
+        statusCode: ApiStatusCode.NotFound,
+        message: ApiErrorMessages.InvalidDaySelect,
+      })
+    }
+
+    // Check if the exercise already exists for the given day
+    const existingExercise = await exercise.findOne({
+      userId,
+      dayId,
+      'exerciseDetails.id': exerciseDetails.id,
     })
-  }
 
-  const existingExercise = await exercise.findOne({
-    userId,
-    dayId,
-    'exerciseDetails.id': exerciseDetails.id,
-  })
+    if (existingExercise) {
+      console.log(existingExercise)
+      throw new ApiError({
+        statusCode: ApiStatusCode.DuplicateEntries,
+        message: `${ApiErrorMessages.ExerciseAlreadyExist} : ${dayExists.dayName}`,
+      })
+    }
 
-  if (existingExercise) {
-    throw new ApiError({
-      statusCode: ApiStatusCode.DuplicateEntries,
-      message: ApiErrorMessages.ExerciseAlreadyExist,
+    // Create a new document for the specific day
+    const exerciseData = new exercise({
+      userId,
+      dayId,
+      exerciseDetails,
+      videoRecommendations: videoRecommendations || [],
     })
+
+    await exerciseData.save()
   }
-
-  const exerciseData = new exercise({
-    userId,
-    dayId,
-    exerciseDetails,
-    videoRecommendations: videoRecommendations || [],
-  })
-
-  await exerciseData.save()
 
   res.status(ApiStatusCode.Created).json(
     new ApiResponse({
       statusCode: ApiStatusCode.Created,
-      data: exerciseData,
       message: ApiSuccessMessages.ExerciseAdded,
     }),
   )
