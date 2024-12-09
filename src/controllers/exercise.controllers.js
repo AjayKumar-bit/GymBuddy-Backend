@@ -127,7 +127,7 @@ const deleteExercise = asyncHandler(async (req, res) => {
 })
 
 const updateExercise = asyncHandler(async (req, res) => {
-  const { exerciseDetails, videoRecommendations, dayId, exerciseId } = req.body
+  const { exerciseDetails, removedVideos, newAddedVideos, dayId, exerciseId } = req.body
   const { _id: userId } = req.user
 
   const dayExists = await days.findOne({ _id: dayId, userId })
@@ -150,12 +150,16 @@ const updateExercise = asyncHandler(async (req, res) => {
     ? { ...exerciseData.exerciseDetails, ...exerciseDetails }
     : exerciseData.exerciseDetails
 
-  exerciseData.videoRecommendations = videoRecommendations
-    ? {
-        ...exerciseData.videoRecommendations,
-        ...videoRecommendations,
-      }
-    : exerciseData.videoRecommendations
+  if (removedVideos.length > 0) {
+    exerciseData.videoRecommendations = exerciseData.videoRecommendations.filter(
+      (video) => !removedVideos.includes(video),
+    )
+  }
+
+  if (newAddedVideos.length > 0) {
+    exerciseData.videoRecommendations = [...exerciseData.videoRecommendations, ...newAddedVideos]
+  }
+
 
   await exerciseData.save()
 
