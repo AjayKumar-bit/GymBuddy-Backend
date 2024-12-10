@@ -150,16 +150,15 @@ const updateExercise = asyncHandler(async (req, res) => {
     ? { ...exerciseData.exerciseDetails, ...exerciseDetails }
     : exerciseData.exerciseDetails
 
-  if (removedVideos.length > 0) {
-    exerciseData.videoRecommendations = exerciseData.videoRecommendations.filter(
-      (video) => !removedVideos.includes(video),
-    )
+  if (!!removedVideos && removedVideos.length > 0) {
+    exerciseData.videoRecommendations = exerciseData.videoRecommendations.filter((video) => {
+      return !removedVideos.includes(video.videoId)
+    })
   }
 
-  if (newAddedVideos.length > 0) {
+  if (!!newAddedVideos && newAddedVideos.length > 0) {
     exerciseData.videoRecommendations = [...exerciseData.videoRecommendations, ...newAddedVideos]
   }
-
 
   await exerciseData.save()
 
