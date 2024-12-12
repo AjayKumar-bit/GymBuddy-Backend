@@ -227,14 +227,7 @@ const getTodayExercises = asyncHandler(async (req, res) => {
     })
   }
 
-  const { offset = 0, limit = 10 } = req.query
-  const offsetNum = parseInt(offset, 10)
-  const limitNum = parseInt(limit, 10)
-
-  const exercises = await exercise
-    .find({ userId, dayId: currentDay._id })
-    .skip(offsetNum)
-    .limit(limitNum)
+  const exercises = await exercise.find({ userId, dayId: currentDay._id }).sort({ createdAt: 1 })
 
   if (!exercises && exercises.length) {
     throw new ApiError({
