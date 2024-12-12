@@ -182,4 +182,32 @@ const deleteUser = asyncHandler(async (req, res) => {
   )
 })
 
-export { registerUser, loginUser, logoutUser, updateUser, deleteUser }
+const addPlannerDate = asyncHandler(async (req, res) => {
+  const { _id } = req.user
+  const { plannerStartDate } = req.body
+
+  const user = await User.findOneAndUpdate(
+    { _id },
+    { $set: { plannerStartDate } },
+    { new: true },
+  ).select('-password')
+
+  if (!user) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.UserNotFound,
+    })
+  }
+
+  user.save()
+
+  res.status(ApiStatusCode.Success).json(
+    new ApiResponse({
+      statusCode: ApiStatusCode.Success,
+      data: user,
+      message: ApiSuccessMessages.PlannerDateAdded,
+    }),
+  )
+})
+
+export { registerUser, loginUser, logoutUser, updateUser, deleteUser, addPlannerDate }

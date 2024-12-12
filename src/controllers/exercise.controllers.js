@@ -4,6 +4,8 @@ import { ApiStatusCode, ApiErrorMessages, ApiSuccessMessages } from '../constant
 import { ApiResponse } from '../utils/apiResponse.utils.js'
 import { days } from '../model/days.model.js'
 import { exercise } from '../model/exercise.model.js'
+import { User } from '../model/user.model.js'
+import moment from 'moment'
 
 const addExercise = asyncHandler(async (req, res) => {
   const { dayIds, exerciseDetails, videoRecommendations } = req.body
@@ -33,7 +35,6 @@ const addExercise = asyncHandler(async (req, res) => {
     })
 
     if (existingExercise) {
-      console.log(existingExercise)
       throw new ApiError({
         statusCode: ApiStatusCode.DuplicateEntries,
         message: `${ApiErrorMessages.ExerciseAlreadyExist} : ${dayExists.dayName}`,
@@ -75,7 +76,11 @@ const getExercisesByDay = asyncHandler(async (req, res) => {
   const offsetNum = parseInt(offset, 10)
   const limitNum = parseInt(limit, 10)
 
-  const exercises = await exercise.find({ dayId, userId }).skip(offsetNum).limit(limitNum)
+  const exercises = await exercise
+    .find({ dayId, userId })
+    .sort({ createdAt: 1 })
+    .skip(offsetNum)
+    .limit(limitNum)
 
   if (exercises.length === 0) {
     return res.status(ApiStatusCode.NotFound).json(
@@ -120,10 +125,12 @@ const deleteExercise = asyncHandler(async (req, res) => {
     })
   }
 
-  res.status(ApiStatusCode.Success).json({
-    statusCode: ApiStatusCode.Success,
-    message: ApiSuccessMessages.ExerciseDeleted,
-  })
+  res.status(ApiStatusCode.Success).json(
+    new ApiResponse({
+      statusCode: ApiStatusCode.Success,
+      message: ApiSuccessMessages.ExerciseDeleted,
+    }),
+  )
 })
 
 const updateExercise = asyncHandler(async (req, res) => {
@@ -162,11 +169,86 @@ const updateExercise = asyncHandler(async (req, res) => {
 
   await exerciseData.save()
 
-  res.status(ApiStatusCode.Success).json({
-    statusCode: ApiStatusCode.Success,
-    data: exerciseData,
-    message: ApiSuccessMessages.ExerciseUpdated,
-  })
+  res.status(ApiStatusCode.Success).json(
+    new ApiResponse({
+      statusCode: ApiStatusCode.Success,
+      data: exerciseData,
+      message: ApiSuccessMessages.ExerciseUpdated,
+    }),
+  )
 })
 
-export { addExercise, getExercisesByDay, deleteExercise, updateExercise }
+const getTodayExercises = asyncHandler(async (req, res) => {
+  const { _id: userId } = req.user
+
+  const user = await User.findById(userId)
+
+  if (!user) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.NotAValidUser,
+    })
+  }
+
+  const allDays = await days.find({ userId }).sort({ createdAt: 1 })
+
+  if (!allDays.length) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.AddDayFirst,
+    })
+  }
+
+  if (!user.plannerStartDate) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.PlannerDateMissing,
+    })
+  }
+
+  const plannerStartDate = moment(user.plannerStartDate).startOf('day')
+  const today = moment().startOf('day')
+  const dayDifference = today.diff(plannerStartDate, 'days') // Difference in days (ignores time)
+
+  if (dayDifference < 0) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.StartDateInFuture,
+    })
+  }
+
+  const currentDayIndex = dayDifference % allDays.length
+  const currentDay = allDays[currentDayIndex]
+
+  if (!currentDay) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.NoDaysFound,
+    })
+  }
+
+  const { offset = 0, limit = 10 } = req.query
+  const offsetNum = parseInt(offset, 10)
+  const limitNum = parseInt(limit, 10)
+
+  const exercises = await exercise
+    .find({ userId, dayId: currentDay._id })
+    .skip(offsetNum)
+    .limit(limitNum)
+
+  if (!exercises && exercises.length) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.NoExerciseFound,
+    })
+  }
+
+  res.status(ApiStatusCode.Success).json(
+    new ApiResponse({
+      statusCode: ApiStatusCode.Success,
+      data: exercises,
+    }),
+  )
+})
+
+export { addExercise, getExercisesByDay, deleteExercise, updateExercise, getTodayExercises }

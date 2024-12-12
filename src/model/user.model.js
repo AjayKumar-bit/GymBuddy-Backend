@@ -22,6 +22,10 @@ const userSchema = new Schema({
     type: String,
     default: '',
   },
+  plannerStartDate:{
+    type: Date,
+    default: '',
+  }
 })
 
 userSchema.pre('save', async function (next) {

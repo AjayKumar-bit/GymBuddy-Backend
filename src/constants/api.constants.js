@@ -36,6 +36,12 @@ export const ApiErrorMessages = {
   ExerciseAlreadyExist: 'This exercise already exists in planner for',
   NoExerciseFound: 'No exercise found with this name',
   InvalidDaySelect: 'One of selected day is invalid',
+  UnauthorizedAccess: 'Unauthorized,Please login in again',
+  PlannerDateMissing: 'No PlannerDate added ,add planner start date first',
+  AddDayFirst: 'No day found in planner, add day first',
+  StartDateInFuture: 'Planner will start soon',
+  NoDaysFound: 'No day found in planner',
+  NoExerciseFound: 'No exercise found in planner for today',
 }
 
 export const ApiSuccessMessages = {
@@ -52,4 +58,5 @@ export const ApiSuccessMessages = {
   NoExerciseFound: 'No exercise data available for this day',
   ExerciseDeleted: 'Exercise deleted successfully',
   ExerciseUpdated: 'Exercise updated successfully',
+  PlannerDateAdded: 'Date added',
 }

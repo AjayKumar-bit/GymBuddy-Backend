@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  addPlannerDate,
   deleteUser,
   loginUser,
   logoutUser,
@@ -14,5 +15,6 @@ router.route('/login').post(loginUser)
 router.route('/logout').post(verifyToken, logoutUser)
 router.route('/updateProfile').patch(verifyToken, updateUser)
 router.route('/deleteUser').delete(verifyToken, deleteUser)
+router.route('/addPlannerDate').post(verifyToken, addPlannerDate)
 
 export const userRouter = router
