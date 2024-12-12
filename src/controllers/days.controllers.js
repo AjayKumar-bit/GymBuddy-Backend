@@ -49,7 +49,7 @@ const addDay = asyncHandler(async (req, res) => {
 })
 
 const getDays = asyncHandler(async (req, res) => {
-  const { _id } = req.user
+  const { _id, plannerStartDate } = req.user
 
   const data = await days
     .find({ userId: _id })
@@ -62,10 +62,16 @@ const getDays = asyncHandler(async (req, res) => {
       message: ApiErrorMessages.NoDaysFound,
     })
   }
+
+  const updateData = {
+    days: data,
+    plannerStartDate,
+  }
+
   res.status(ApiStatusCode.Success).json(
     new ApiResponse({
       statusCode: ApiStatusCode.Success,
-      data,
+      data: updateData,
     }),
   )
 })
