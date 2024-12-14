@@ -42,6 +42,8 @@ export const ApiErrorMessages = {
   StartDateInFuture: 'Planner will start soon',
   NoDaysFound: 'No day found in planner',
   NoExerciseFound: 'No exercise found in planner for today',
+  SameOldAndNewPassword: 'Old and new passwords are same',
+  OldPasswordIncorrect: 'Old password is incorrect',
 }
 
 export const ApiSuccessMessages = {
@@ -59,4 +61,5 @@ export const ApiSuccessMessages = {
   ExerciseDeleted: 'Exercise deleted successfully',
   ExerciseUpdated: 'Exercise updated successfully',
   PlannerDateAdded: 'Date added',
+  PasswordChangedSuccessfully: 'Password updated successfully',
 }

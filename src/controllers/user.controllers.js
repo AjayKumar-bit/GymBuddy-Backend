@@ -210,4 +210,63 @@ const addPlannerDate = asyncHandler(async (req, res) => {
   )
 })
 
-export { registerUser, loginUser, logoutUser, updateUser, deleteUser, addPlannerDate }
+const changePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body
+  const { _id } = req.user
+
+  if (!oldPassword || !newPassword || newPassword.trim() === '' || !oldPassword.trim() === '') {
+    throw new ApiError({
+      statusCode: ApiStatusCode.BadRequest,
+      message: ApiErrorMessages.RequiredFieldMissing,
+    })
+  }
+
+  if (oldPassword === newPassword) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.BadRequest,
+      message: ApiErrorMessages.SameOldAndNewPassword,
+    })
+  }
+
+  const user = await User.findById(_id)
+
+  if (!user) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.NotFound,
+      message: ApiErrorMessages.UserNotFound,
+    })
+  }
+
+  const isOldPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+  if (!isOldPasswordCorrect) {
+    throw new ApiError({
+      statusCode: ApiStatusCode.Unauthorized,
+      message: ApiErrorMessages.OldPasswordIncorrect,
+    })
+  }
+
+  user.password = newPassword
+  user.accessToken = generateToken(user._id.toString())
+  await user.save()
+
+  const { password: _, ...data } = user.toObject()
+
+  res.status(ApiStatusCode.Success).json(
+    new ApiResponse({
+      statusCode: ApiStatusCode.Success,
+      data,
+      message: ApiSuccessMessages.PasswordChangedSuccessfully,
+    }),
+  )
+})
+
+export {
+  addPlannerDate,
+  changePassword,
+  deleteUser,
+  loginUser,
+  logoutUser,
+  registerUser,
+  updateUser,
+}
