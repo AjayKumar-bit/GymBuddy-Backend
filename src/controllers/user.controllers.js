@@ -5,6 +5,8 @@ import { ApiError } from '../utils/apiError.utils.js'
 import { ApiResponse } from '../utils/apiResponse.utils.js'
 import { asyncHandler } from '../utils/asyncHandler.utils.js'
 import { generateToken, isValidEmail } from '../utils/common.utils.js'
+import { days } from '../model/days.model.js'
+import { exercise } from '../model/exercise.model.js'
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, emailId, password } = req.body
@@ -170,9 +172,10 @@ const deleteUser = asyncHandler(async (req, res) => {
   session.startTransaction()
 
   try {
-    const days = await days.find({ userId: _id }).session(session)
+    const dayData = await days.find({ userId: _id }).session(session)
+
     if (days.length > 0) {
-      const dayIds = days.map((day) => day._id)
+      const dayIds = dayData.map((day) => day._id)
 
       await exercise.deleteMany({ dayId: { $in: dayIds } }).session(session)
 
