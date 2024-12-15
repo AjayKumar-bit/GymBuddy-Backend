@@ -23,7 +23,7 @@ const userSchema = new Schema({
     default: '',
   },
   plannerStartDate: {
-    type: Date,
+    type: String,
     default: '',
   },
 })
