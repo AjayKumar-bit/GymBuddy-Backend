@@ -163,23 +163,66 @@ const updateUser = asyncHandler(async (req, res) => {
   )
 })
 
+// const deleteUser = asyncHandler(async (req, res) => {
+//   const { _id } = req.user
+//   const user = await User.deleteOne({ _id })
+
+//   if (!user.acknowledged) {
+//     throw new ApiError({
+//       statusCode: ApiStatusCode.ServerError,
+//       message: ApiErrorMessages.SomethingWentWrong,
+//     })
+//   }
+
+//   res.status(ApiStatusCode.Success).json(
+//     new ApiResponse({
+//       statusCode: ApiStatusCode.Success,
+//       message: ApiSuccessMessages.UserDeleted,
+//     }),
+//   )
+// })
+
 const deleteUser = asyncHandler(async (req, res) => {
   const { _id } = req.user
-  const user = await User.deleteOne({ _id })
+  const session = await mongoose.startSession()
+  session.startTransaction()
 
-  if (!user.acknowledged) {
+  try {
+    const days = await days.find({ userId: _id }).session(session)
+    if (days.length > 0) {
+      const dayIds = days.map((day) => day._id)
+
+      await exercise.deleteMany({ dayId: { $in: dayIds } }).session(session)
+
+      await days.deleteMany({ userId: _id }).session(session)
+    }
+
+    const user = await User.deleteOne({ _id }).session(session)
+    if (!user.acknowledged) {
+      throw new ApiError({
+        statusCode: ApiStatusCode.ServerError,
+        message: ApiErrorMessages.SomethingWentWrong,
+      })
+    }
+
+    await session.commitTransaction()
+
+    res.status(ApiStatusCode.Success).json(
+      new ApiResponse({
+        statusCode: ApiStatusCode.Success,
+        message: ApiSuccessMessages.UserDeleted,
+      }),
+    )
+  } catch (error) {
+    await session.abortTransaction()
+
     throw new ApiError({
       statusCode: ApiStatusCode.ServerError,
       message: ApiErrorMessages.SomethingWentWrong,
     })
+  } finally {
+    session.endSession()
   }
-
-  res.status(ApiStatusCode.Success).json(
-    new ApiResponse({
-      statusCode: ApiStatusCode.Success,
-      message: ApiSuccessMessages.UserDeleted,
-    }),
-  )
 })
 
 const addPlannerDate = asyncHandler(async (req, res) => {
