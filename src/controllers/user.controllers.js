@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import { ApiErrorMessages, ApiStatusCode, ApiSuccessMessages } from '../constants/api.constants.js'
 import { User } from '../model/user.model.js'
 import { ApiError } from '../utils/apiError.utils.js'
@@ -162,25 +163,6 @@ const updateUser = asyncHandler(async (req, res) => {
     }),
   )
 })
-
-// const deleteUser = asyncHandler(async (req, res) => {
-//   const { _id } = req.user
-//   const user = await User.deleteOne({ _id })
-
-//   if (!user.acknowledged) {
-//     throw new ApiError({
-//       statusCode: ApiStatusCode.ServerError,
-//       message: ApiErrorMessages.SomethingWentWrong,
-//     })
-//   }
-
-//   res.status(ApiStatusCode.Success).json(
-//     new ApiResponse({
-//       statusCode: ApiStatusCode.Success,
-//       message: ApiSuccessMessages.UserDeleted,
-//     }),
-//   )
-// })
 
 const deleteUser = asyncHandler(async (req, res) => {
   const { _id } = req.user
