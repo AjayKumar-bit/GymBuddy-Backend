@@ -206,9 +206,10 @@ const getTodayExercises = asyncHandler(async (req, res) => {
     })
   }
 
-  const plannerStartDate = moment(user.plannerStartDate).startOf('day')
-  const today = moment().startOf('day')
-  const dayDifference = today.diff(plannerStartDate, 'days') // Difference in days (ignores time)
+  const plannerStartDate = moment(user.plannerStartDate, 'ddd MMM DD YYYY HH:mm:ss [GMT]ZZ')
+  const today = moment()
+
+  const dayDifference = today.diff(plannerStartDate, 'days')
 
   if (dayDifference < 0) {
     throw new ApiError({
