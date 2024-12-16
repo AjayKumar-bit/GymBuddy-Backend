@@ -230,7 +230,7 @@ const getTodayExercises = asyncHandler(async (req, res) => {
 
   const exercises = await exercise.find({ userId, dayId: currentDay._id }).sort({ createdAt: 1 })
 
-  if (!exercises && exercises.length) {
+  if (!exercises && exercises.length===0) {
     throw new ApiError({
       statusCode: ApiStatusCode.NotFound,
       message: ApiErrorMessages.NoExerciseFound,
