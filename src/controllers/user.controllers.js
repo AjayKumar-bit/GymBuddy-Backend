@@ -1,3 +1,10 @@
+/**
+ * @file user.controllers.js
+ * @description This file contains the controller functions for handling user-related operations.
+ * It includes functions for registering, logging in, logging out, updating, and deleting users,
+ * as well as changing passwords and adding planner dates.
+ */
+
 import mongoose from 'mongoose'
 import { ApiErrorMessages, ApiStatusCode, ApiSuccessMessages } from '../constants/api.constants.js'
 import { User } from '../model/user.model.js'
@@ -8,10 +15,23 @@ import { generateToken, isValidEmail } from '../utils/common.utils.js'
 import { days } from '../model/days.model.js'
 import { exercise } from '../model/exercise.model.js'
 
+/**
+ * @function registerUser
+ * @description Registers a new user.
+ * @route POST /users/register
+ * @access Public
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.name - User's name
+ * @param {string} req.body.emailId - User's email
+ * @param {string} req.body.password - User's password
+ * @param {Object} res - Express response object
+ * @throws {ApiError} If required fields are missing, email is invalid, or user already exists
+ */
 const registerUser = asyncHandler(async (req, res) => {
   const { name, emailId, password } = req.body
 
-  // checking all required  fields present
+  // checking all required fields present
   if ([name, emailId, password].some((item) => !item || item?.trim() === '')) {
     throw new ApiError({
       statusCode: ApiStatusCode.BadRequest,
@@ -65,10 +85,22 @@ const registerUser = asyncHandler(async (req, res) => {
   )
 })
 
+/**
+ * @function loginUser
+ * @description Logs in a user.
+ * @route POST /users/login
+ * @access Public
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.emailId - User's email
+ * @param {string} req.body.password - User's password
+ * @param {Object} res - Express response object
+ * @throws {ApiError} If required fields are missing, user is not found, or password is incorrect
+ */
 const loginUser = asyncHandler(async (req, res) => {
   const { emailId, password } = req.body
 
-  // is required field password and email present
+  // checking if required fields password and email are present
   if (!(emailId && password)) {
     throw new ApiError({
       statusCode: ApiStatusCode.BadRequest,
@@ -76,7 +108,7 @@ const loginUser = asyncHandler(async (req, res) => {
     })
   }
 
-  //check is user exist
+  // checking if user exists
   const user = await User.findOne({ emailId })
   if (!user) {
     throw new ApiError({
@@ -94,7 +126,7 @@ const loginUser = asyncHandler(async (req, res) => {
     })
   }
 
-  //generating Token
+  // generating Token
   user.accessToken = await generateToken(user._id.toString())
   user.save()
 
@@ -109,6 +141,16 @@ const loginUser = asyncHandler(async (req, res) => {
   )
 })
 
+/**
+ * @function logoutUser
+ * @description Logs out a user.
+ * @route POST /users/logout
+ * @access Private
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - Authenticated user object
+ * @param {string} req.user._id - User ID
+ * @param {Object} res - Express response object
+ */
 const logoutUser = asyncHandler(async (req, res) => {
   const { _id } = req.user
   await User.findOneAndUpdate({ _id }, { accessToken: '' }, { new: false })
@@ -120,11 +162,25 @@ const logoutUser = asyncHandler(async (req, res) => {
   )
 })
 
+/**
+ * @function updateUser
+ * @description Updates a user's profile.
+ * @route PATCH /users/updateProfile
+ * @access Private
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.name - New name of the user
+ * @param {string} req.body.emailId - New email of the user
+ * @param {Object} req.user - Authenticated user object
+ * @param {string} req.user._id - User ID
+ * @param {Object} res - Express response object
+ * @throws {ApiError} If no fields to update, email is invalid, or email already exists
+ */
 const updateUser = asyncHandler(async (req, res) => {
   const { _id } = req.user
   const { name, emailId } = req.body
 
-  // is there nothing to update meant all fields are empty
+  // checking if there is nothing to update, meaning all fields are empty
   if (!name && !emailId) {
     throw new ApiError({
       statusCode: ApiStatusCode.BadRequest,
@@ -132,7 +188,7 @@ const updateUser = asyncHandler(async (req, res) => {
     })
   }
 
-  // checking email  is in valid format
+  // checking if email is in valid format
   const isEmailValid = emailId ? isValidEmail(emailId) : true
   if (!isEmailValid) {
     throw new ApiError({
@@ -141,7 +197,7 @@ const updateUser = asyncHandler(async (req, res) => {
     })
   }
 
-  // checking if user exist
+  // checking if user already exists
   const userAlreadyExist = emailId ? await User.findOne({ emailId }) : false
   if (userAlreadyExist) {
     throw new ApiError({
@@ -150,7 +206,7 @@ const updateUser = asyncHandler(async (req, res) => {
     })
   }
 
-  // updating
+  // updating user
   const user = await User.findOneAndUpdate(
     { _id },
     { $set: { name, emailId } },
@@ -166,6 +222,17 @@ const updateUser = asyncHandler(async (req, res) => {
   )
 })
 
+/**
+ * @function deleteUser
+ * @description Deletes a user and their associated data.
+ * @route DELETE /users/deleteUser
+ * @access Private
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - Authenticated user object
+ * @param {string} req.user._id - User ID
+ * @param {Object} res - Express response object
+ * @throws {ApiError} If something goes wrong during the deletion process
+ */
 const deleteUser = asyncHandler(async (req, res) => {
   const { _id } = req.user
   const session = await mongoose.startSession()
@@ -210,6 +277,19 @@ const deleteUser = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @function addPlannerDate
+ * @description Adds a planner start date for the user.
+ * @route POST /users/addPlannerDate
+ * @access Private
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.plannerStartDate - Planner start date
+ * @param {Object} req.user - Authenticated user object
+ * @param {string} req.user._id - User ID
+ * @param {Object} res - Express response object
+ * @throws {ApiError} If user is not found
+ */
 const addPlannerDate = asyncHandler(async (req, res) => {
   const { _id } = req.user
   const { plannerStartDate } = req.body
@@ -238,10 +318,25 @@ const addPlannerDate = asyncHandler(async (req, res) => {
   )
 })
 
+/**
+ * @function changePassword
+ * @description Changes the user's password.
+ * @route PATCH /users/changePassword
+ * @access Private
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.oldPassword - User's old password
+ * @param {string} req.body.newPassword - User's new password
+ * @param {Object} req.user - Authenticated user object
+ * @param {string} req.user._id - User ID
+ * @param {Object} res - Express response object
+ * @throws {ApiError} If required fields are missing, old password is incorrect, or new password is the same as the old password
+ */
 const changePassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body
   const { _id } = req.user
 
+  // checking if required fields are present
   if (!oldPassword || !newPassword || newPassword.trim() === '' || !oldPassword.trim() === '') {
     throw new ApiError({
       statusCode: ApiStatusCode.BadRequest,
@@ -249,6 +344,7 @@ const changePassword = asyncHandler(async (req, res) => {
     })
   }
 
+  // checking if old password and new password are the same
   if (oldPassword === newPassword) {
     throw new ApiError({
       statusCode: ApiStatusCode.BadRequest,
@@ -265,6 +361,7 @@ const changePassword = asyncHandler(async (req, res) => {
     })
   }
 
+  // checking if old password is correct
   const isOldPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
   if (!isOldPasswordCorrect) {
